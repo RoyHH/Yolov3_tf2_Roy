@@ -50,19 +50,29 @@ def main(_argv):
 
     # 载入需检测的图片
     # 返回FLAGS.image的文件夹包含的文件或文件夹的名字的列表
-    imagelist = os.listdir(FLAGS.image)
-    for image in imagelist:
-        # 分离文件名和拓展名（后缀）
+
+    if FLAGS.image != './data/input_pic/':
+        image = os.path.basename(FLAGS.image)
         image_pre, ext = os.path.splitext(image)
-        imgfile = FLAGS.image + image
         img_raw = tf.image.decode_image(
-            open(imgfile, 'rb').read(), channels=3)
-        # 进行检测
+            open(FLAGS.image, 'rb').read(), channels=3)
         detect_image(img_raw, image_pre, ext, yolo, class_names)
+
+    else:
+        imagelist = os.listdir(FLAGS.image)
+        for image in imagelist:
+            # 分离文件名和拓展名（后缀）
+            image_pre, ext = os.path.splitext(image)
+            imgfile = FLAGS.image + image
+            img_raw = tf.image.decode_image(
+                open(imgfile, 'rb').read(), channels=3)
+            # 进行检测
+            detect_image(img_raw, image_pre, ext, yolo, class_names)
 
     # 绘制yolo的网络结构拓扑
     tf.keras.utils.plot_model(yolo, to_file='./logs/model_yolov3_tb.png', show_shapes=True, show_layer_names=True, rankdir='TB',
                               dpi=900, expand_nested=True)
+
 
 def detect_image(img_raw, image_pre, ext, yolo, class_names):
     # 重构图片格式——416
@@ -96,3 +106,4 @@ if __name__ == '__main__':
         app.run(main)
     except SystemExit:
         pass
+
