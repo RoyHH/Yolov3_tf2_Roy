@@ -43,6 +43,10 @@ flags.DEFINE_integer('num_classes', 80, 'number of classes in the model')
 flags.DEFINE_integer('weights_num_classes', None, 'specify num class for `weights` file if different, '
                      'useful in transfer learning with different number of classes')
 
+#用于切换CPU或GPU
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 def main(_argv):
     physical_devices = tf.config.experimental.list_physical_devices('GPU')
@@ -202,7 +206,8 @@ def main(_argv):
     else:
         # 模型配置器
         model.compile(optimizer=optimizer, loss=loss,
-                      run_eagerly=(FLAGS.mode == 'eager_fit'))
+                      run_eagerly=(FLAGS.mode == 'eager_fit'),
+                      metrics=['accuracy'])
 
         # 自定义模型控制器，创建一个保存模型权重的回调
         callbacks = [
@@ -213,11 +218,21 @@ def main(_argv):
             TensorBoard(log_dir='logs')
         ]
 
+        # # period = 2表示每隔1个epoch保存一次checkpoint
+        # callbacks = [
+        #     ReduceLROnPlateau(verbose=1),
+        #     EarlyStopping(patience=3, verbose=1),
+        #     ModelCheckpoint('checkpoints/yolov3_train_{epoch}.tf',
+        #                     verbose=1, save_weights_only=True, period = 2),
+        #     TensorBoard(log_dir='logs')
+        # ]
+
         # 模型训练，使用新的回调训练模型
         history = model.fit(train_dataset,
                             epochs=FLAGS.epochs,
                             callbacks=callbacks,
-                            validation_data=val_dataset)
+                            validation_data=val_dataset,
+                            validation_freq=1)
 
 
 if __name__ == '__main__':
@@ -229,5 +244,4 @@ if __name__ == '__main__':
 
 '''
 94~136 理解得不是很好，后续再追一下
-
 '''
