@@ -32,6 +32,7 @@
 
 - [ ] GTasks
     - [ ] detect functional optimization
+        - [x] detect_picture：warning for specific detection object
         - [ ] detect_picture：the latest picture detect
     - [ ] train functional optimization
         - [x] presentation of acc data
@@ -68,6 +69,14 @@ python detect_picture.py --image ./data/girl.png
 
 # yolov3-tiny
 python detect_picture.py --weights ./checkpoints/yolov3-tiny.tf --tiny --image ./data/girl.png
+```
+- warning for specific detection object -- take folder pictures detect for example
+```
+# yolov3
+python detect_picture.py --warning bus
+
+# yolov3-tiny
+python detect_picture.py --weights ./checkpoints/yolov3-tiny.tf --tiny --warning bus
 ```
 ### 2.2 video
 ```

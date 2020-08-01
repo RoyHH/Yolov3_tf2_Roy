@@ -25,6 +25,64 @@ flags.DEFINE_integer('size', 416, 'resize images to')
 flags.DEFINE_string('image', './data/input_pic/', 'path to input image')
 flags.DEFINE_string('output', './output_pic/', 'path to output image')
 flags.DEFINE_integer('num_classes', 80, 'number of classes in the model')
+flags.DEFINE_string('warning', None, 'warning for specific detection object')
+
+
+def detect_image(img_raw, image_pre, ext, yolo, class_names):
+    # 重构图片格式——416
+    img = tf.expand_dims(img_raw, 0)
+    img = transform_images(img, FLAGS.size)
+
+    # 日志中的时间标注，当前时间、运行时间
+    t1 = time.time()
+    boxes, scores, classes, nums = yolo(img)
+    t2 = time.time()
+    logging.info('time: {}'.format(t2 - t1))
+
+    logging.info('detections:')
+    # 日志中将检测出的目标逐个标注出类别、分数、boxes
+    for i in range(nums[0]):
+        logging.info('\t{}, {}, {}'.format(class_names[int(classes[0][i])],
+                                           np.array(scores[0][i]),
+                                           np.array(boxes[0][i])))
+
+    warning(nums, image_pre, class_names, classes, boxes)
+
+    # 图像上画出检测出的目标，并标注相关信息，但是nums是什么？
+    img = cv2.cvtColor(img_raw.numpy(), cv2.COLOR_RGB2BGR)
+    img = draw_outputs(img, (boxes, scores, classes, nums), class_names)
+    cv2.imwrite(FLAGS.output + image_pre + '_out' + ext, img)
+    # 图像输出
+    logging.info('output saved to: {}'.format(FLAGS.output + image_pre + '_out' + ext))
+    return
+
+
+# 如果检测到FLAGS.warning，则报警，并且输出报警信息到txt
+def warning(nums, image_pre, class_names, classes, boxes):
+    warn_num = 0
+    for i in range(nums[0]):
+        if class_names[int(classes[0][i])] == FLAGS.warning:
+            warn_num = warn_num + 1
+            if warn_num == 1:
+                print("========================================="
+                      "Warning Warning Warning————" + FLAGS.warning +
+                      "=========================================")
+                logging.info('Warning txt to: {}'.format(FLAGS.output + image_pre + '_warning_out.txt'))
+                file = open(FLAGS.output + image_pre + '_warning_out' + '.txt','w')
+
+                if FLAGS.image != './data/input_pic/':
+                    file.write("源文件地址：" + FLAGS.image )
+                else:
+                    file.write("源文件地址：" + FLAGS.image + image_pre)
+                file.write('\n')
+                file.write('\t{}, {}'.format(class_names[int(classes[0][i])],
+                                             np.array(boxes[0][i])))
+            else:
+                file.write('\n')
+                file.write('\t{}, {}'.format(class_names[int(classes[0][i])],
+                                             np.array(boxes[0][i])))
+        continue
+    return
 
 
 def main(_argv):
@@ -49,8 +107,6 @@ def main(_argv):
     logging.info('classes loaded')
 
     # 载入需检测的图片
-    # 返回FLAGS.image的文件夹包含的文件或文件夹的名字的列表
-
     if FLAGS.image != './data/input_pic/':
         image = os.path.basename(FLAGS.image)
         image_pre, ext = os.path.splitext(image)
@@ -59,6 +115,7 @@ def main(_argv):
         detect_image(img_raw, image_pre, ext, yolo, class_names)
 
     else:
+        # 返回FLAGS.image的文件夹包含的文件或文件夹的名字的列表
         imagelist = os.listdir(FLAGS.image)
         for image in imagelist:
             # 分离文件名和拓展名（后缀）
@@ -69,36 +126,9 @@ def main(_argv):
             # 进行检测
             detect_image(img_raw, image_pre, ext, yolo, class_names)
 
-    # 绘制yolo的网络结构拓扑
-    tf.keras.utils.plot_model(yolo, to_file='./logs/model_yolov3_tb.png', show_shapes=True, show_layer_names=True, rankdir='TB',
-                              dpi=900, expand_nested=True)
-
-
-def detect_image(img_raw, image_pre, ext, yolo, class_names):
-    # 重构图片格式——416
-    img = tf.expand_dims(img_raw, 0)
-    img = transform_images(img, FLAGS.size)
-
-    # 日志中的时间标注，当前时间、运行时间
-    t1 = time.time()
-    boxes, scores, classes, nums = yolo(img)
-    t2 = time.time()
-    logging.info('time: {}'.format(t2 - t1))
-
-    logging.info('detections:')
-    # 日志中将检测出的目标逐个标注出类别、分数、boxes
-    for i in range(nums[0]):
-        logging.info('\t{}, {}, {}'.format(class_names[int(classes[0][i])],
-                                           np.array(scores[0][i]),
-                                           np.array(boxes[0][i])))
-
-    # 图像上画出检测出的目标，并标注相关信息，但是nums是什么？
-    img = cv2.cvtColor(img_raw.numpy(), cv2.COLOR_RGB2BGR)
-    img = draw_outputs(img, (boxes, scores, classes, nums), class_names)
-    cv2.imwrite(FLAGS.output + image_pre + '_out' + ext, img)
-    # 图像输出
-    logging.info('output saved to: {}'.format(FLAGS.output + image_pre + '_out' + ext))
-    return
+    # # 绘制yolo的网络结构拓扑
+    # tf.keras.utils.plot_model(yolo, to_file='./logs/model_yolov3_tb.png', show_shapes=True, show_layer_names=True, rankdir='TB',
+    #                           dpi=900, expand_nested=True)
 
 
 if __name__ == '__main__':
