@@ -218,7 +218,7 @@ def main(_argv):
             TensorBoard(log_dir='logs')
         ]
 
-        # # period = 2表示每隔1个epoch保存一次checkpoint
+        # # period = 2， 表示每隔1个epoch保存一次checkpoint
         # callbacks = [
         #     ReduceLROnPlateau(verbose=1),
         #     EarlyStopping(patience=3, verbose=1),

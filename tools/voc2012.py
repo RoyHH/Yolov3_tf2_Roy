@@ -8,6 +8,12 @@ import tensorflow as tf
 import lxml.etree
 import tqdm
 
+import os
+# -1表示不用GPU，使用CPU，0、1、2、3表示GPU编号
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+# 0、1、2表示显示信息的详细程度，2为最简洁显示
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
 flags.DEFINE_string('data_dir', './data/voc2012_raw/VOCdevkit/VOC2012/',
                     'path to raw PASCAL VOC dataset')
 flags.DEFINE_enum('split', 'train', [
@@ -93,10 +99,12 @@ def main(_argv):
 
     writer = tf.io.TFRecordWriter(FLAGS.output_file)
     image_list = open(os.path.join(
-        FLAGS.data_dir, 'ImageSets', 'Main', 'aeroplane_%s.txt' % FLAGS.split)).read().splitlines()
+        # FLAGS.data_dir, 'ImageSets', 'Main', 'aeroplane_%s.txt' % FLAGS.split)).read().splitlines()
+        FLAGS.data_dir, 'ImageSets', 'Main', '%s.txt' % FLAGS.split)).read().splitlines()
     logging.info("Image list loaded: %d", len(image_list))
     for image in tqdm.tqdm(image_list):
-        name, _ = image.split()
+        # name, _ = image.split()
+        name = image
         annotation_xml = os.path.join(
             FLAGS.data_dir, 'Annotations', name + '.xml')
         annotation_xml = lxml.etree.fromstring(open(annotation_xml).read())
